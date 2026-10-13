@@ -6,6 +6,7 @@ import hmac
 import ipaddress
 import logging
 import re
+import tempfile
 import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -40,6 +41,7 @@ from rental_automation.models import (
     PaymentTransaction,
     RentalAgreement,
     Tenant,
+    TenantIdentifier,
     TenantPortalIdentityDocument,
     TenantPortalInvite,
     TenantProfileOccupant,
@@ -51,6 +53,7 @@ from rental_automation.notification_service import send_monthly_reminders
 from rental_automation.reconciliation import IncomingPayment, reconcile_payments
 from rental_automation.tenant_registry import (
     TENANT_WORKBOOK_PATH,
+    export_tenants_workbook,
     import_tenants_workbook,
     upsert_tenant_workbook_row,
 )
@@ -243,6 +246,18 @@ def _tenant_dict(tenant: Tenant) -> dict:
 
 def _sync_tenant_workbook(session: Session) -> None:
     """Keep the database used by billing and matching aligned with the workbook."""
+    settings = get_settings()
+    if settings.tenant_registry_mode == "database":
+        if not TENANT_WORKBOOK_PATH.exists():
+            try:
+                export_tenants_workbook(session, TENANT_WORKBOOK_PATH)
+            except (OSError, ValueError) as exc:
+                logger.exception("Unable to create tenant workbook export")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Could not create the tenant workbook export.",
+                ) from exc
+        return
     try:
         import_tenants_workbook(session, TENANT_WORKBOOK_PATH)
     except (OSError, ValueError) as exc:
@@ -1152,14 +1167,15 @@ def approve_tenant_profile_submission(submission_id: int) -> dict:
                 (item.value for item in tenant.identifiers if item.kind == "remarks"), None
             ),
         }
-        try:
-            upsert_tenant_workbook_row(values, TENANT_WORKBOOK_PATH)
-        except (OSError, ValueError) as exc:
-            logger.exception("Unable to approve tenant profile into workbook")
-            raise HTTPException(
-                status_code=503,
-                detail=f"Could not save {TENANT_WORKBOOK_PATH.name}. Close it in Excel and try again.",
-            ) from exc
+        if get_settings().tenant_registry_mode != "database":
+            try:
+                upsert_tenant_workbook_row(values, TENANT_WORKBOOK_PATH)
+            except (OSError, ValueError) as exc:
+                logger.exception("Unable to approve tenant profile into workbook")
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"Could not save {TENANT_WORKBOOK_PATH.name}. Close it in Excel and try again.",
+                ) from exc
         tenant.name = submission.name
         tenant.phone = submission.phone
         tenant.email = submission.email
@@ -1167,6 +1183,11 @@ def approve_tenant_profile_submission(submission_id: int) -> dict:
         submission.status = "APPROVED"
         submission.reviewed_at = datetime.now(timezone.utc)
         session.commit()
+        if get_settings().tenant_registry_mode == "database":
+            try:
+                export_tenants_workbook(session, TENANT_WORKBOOK_PATH)
+            except (OSError, ValueError):
+                logger.exception("Tenant was approved, but workbook export failed")
         return {"submission": _portal_submission_dict(submission), "tenant": _tenant_dict(tenant)}
 
 
@@ -1258,6 +1279,7 @@ def dashboard_data(month: str | None = None) -> dict:
         )
         return {
             "month": billing_month.strftime("%Y-%m"),
+            "tenant_registry_mode": get_settings().tenant_registry_mode,
             "tenants": [_tenant_dict(tenant) for tenant in tenants],
             "ledgers": ledger_rows,
             "summary": {
@@ -1380,6 +1402,49 @@ def fetch_kseb_bill() -> dict:
     }
 
 
+@app.get("/api/tenants/workbook", include_in_schema=False)
+def download_tenant_workbook() -> FileResponse:
+    """Download a current workbook copy of the tenant registry."""
+    try:
+        with SessionFactory() as session:
+            _sync_tenant_workbook(session)
+            export_tenants_workbook(session, TENANT_WORKBOOK_PATH)
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="Could not create the tenant workbook.") from exc
+    return FileResponse(
+        TENANT_WORKBOOK_PATH,
+        filename="tenants.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@app.post("/api/tenants/workbook", include_in_schema=False)
+async def upload_tenant_workbook(request: Request) -> dict:
+    """Apply an edited workbook to the hosted database-backed tenant registry."""
+    if get_settings().tenant_registry_mode != "database":
+        raise HTTPException(
+            status_code=409,
+            detail="Workbook upload is for database-backed hosting; edit the local workbook directly.",
+        )
+    body = await request.body()
+    if not body or len(body) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Choose a workbook up to 10 MB.")
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as temporary_file:
+            temporary_file.write(body)
+            temp_path = Path(temporary_file.name)
+        with SessionFactory() as session:
+            count = import_tenants_workbook(session, temp_path)
+            export_tenants_workbook(session, TENANT_WORKBOOK_PATH)
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=f"Could not import tenant workbook: {exc}") from exc
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+    return {"imported_count": count}
+
+
 @app.post("/api/tenants", status_code=201)
 def create_tenant(payload: TenantCreate) -> dict:
     """Add a tenant to the workbook and immediately sync the registry."""
@@ -1397,6 +1462,39 @@ def create_tenant(payload: TenantCreate) -> dict:
         values["upi_vpa"] = values["upi_vpa"] or None
         values["expected_sender_name"] = values["expected_sender_name"] or None
         values["expected_remarks"] = values["expected_remarks"] or None
+        if get_settings().tenant_registry_mode == "database":
+            tenant = Tenant(
+                name=values["name"],
+                unit_number=values["unit_number"],
+                phone=values["phone"],
+                email=values["email"],
+                upi_vpa=values["upi_vpa"],
+                monthly_rent=values["monthly_rent"],
+                maintenance_fee=values["maintenance_fee"],
+                deposit_amount=values["deposit_amount"],
+                opening_balance=values["opening_balance"],
+                due_day=values["due_day"],
+                is_active=True,
+            )
+            if values["expected_sender_name"]:
+                tenant.identifiers.append(
+                    TenantIdentifier(kind="sender_name", value=values["expected_sender_name"])
+                )
+            if values["expected_remarks"]:
+                tenant.identifiers.append(
+                    TenantIdentifier(kind="remarks", value=values["expected_remarks"])
+                )
+            session.add(tenant)
+            try:
+                session.commit()
+            except IntegrityError as exc:
+                session.rollback()
+                raise HTTPException(status_code=409, detail="That unit number is already registered.") from exc
+            try:
+                export_tenants_workbook(session, TENANT_WORKBOOK_PATH)
+            except (OSError, ValueError):
+                logger.exception("Tenant was saved, but workbook export failed")
+            return _tenant_dict(tenant)
         try:
             upsert_tenant_workbook_row(values, TENANT_WORKBOOK_PATH)
             _sync_tenant_workbook(session)

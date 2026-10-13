@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     )
 
     database_url: str = "sqlite:///./rental_automation.db"
+    tenant_registry_mode: str = "workbook"
     timezone: str = "Asia/Kolkata"
     payment_match_threshold: float = Field(default=0.82, ge=0.0, le=1.0)
     payment_amount_tolerance: float = Field(default=1.00, ge=0.0)
@@ -74,8 +75,17 @@ class Settings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def validate_database_url(cls, value: str) -> str:
-        if not value.startswith(("sqlite:///", "postgresql://", "postgresql+")):
+        if value.startswith(("postgres://", "postgresql://")):
+            value = "postgresql+psycopg://" + value.split("://", 1)[1]
+        if not value.startswith(("sqlite:///", "postgresql+")):
             raise ValueError("database_url must use SQLite or PostgreSQL")
+        return value
+
+    @field_validator("tenant_registry_mode")
+    @classmethod
+    def validate_tenant_registry_mode(cls, value: str) -> str:
+        if value not in {"workbook", "database"}:
+            raise ValueError("tenant_registry_mode must be 'workbook' or 'database'")
         return value
 
 

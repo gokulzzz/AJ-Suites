@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: aj-suites
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && playwright install --with-deps chromium
+    startCommand: uvicorn rental_automation.web:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: TENANT_REGISTRY_MODE
+        value: database
+      - key: TIMEZONE
+        value: Asia/Kolkata
+      - key: KSEB_FETCH_DAY
+        value: "15"
+      - key: PUBLIC_APP_URL
+        fromService:
+          type: web
+          name: aj-suites
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: APP_AUTH_USERNAME
+        sync: false
+      - key: APP_AUTH_PASSWORD
+        sync: false
+      - key: ID_PROOF_ENCRYPTION_KEY
+        sync: false
+      - key: KSEB_WSS_USER_ID
+        sync: false
+      - key: KSEB_WSS_PASSWORD
+        sync: false

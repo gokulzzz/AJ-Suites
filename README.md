@@ -15,6 +15,7 @@ The application creates its configured tables on startup. Configure settings thr
 | Variable | Default | Purpose |
 |---|---|---|
 | `DATABASE_URL` | `sqlite:///./rental_automation.db` | SQLite or PostgreSQL connection URL |
+| `TENANT_REGISTRY_MODE` | `workbook` | `workbook` keeps the local Excel file as the tenant source; `database` uses the database as the source for hosted deployments |
 | `TIMEZONE` | `Asia/Kolkata` | Scheduler timezone |
 | `PAYMENT_MATCH_THRESHOLD` | `0.82` | Minimum fuzzy-name/remarks match score |
 | `PAYMENT_AMOUNT_TOLERANCE` | `1.00` | Reserved tolerance for amount-assisted matching |
@@ -79,6 +80,12 @@ The main tenant's agreement link also lets them upload one government ID proof p
 From the admin dashboard's **Tenant onboarding** panel, choose an active unit and create a private tenant link. Creating another link for that unit revokes the previous one. The tenant opens `/tenant`, enters their name and contact details, adds each other occupant with contact details, and saves the profile for manager review. Tenants cannot change their unit, rent, deposit, or billing fields. The admin dashboard lists submitted occupants and separate ID-proof status/download links for each person. Approving a submission updates the main tenant's name, phone, email, and UPI/VPA in the database and `tenants.xlsx`; additional occupant details remain attached to that reviewed submission. A later tenant update creates a new pending submission.
 
 The tenant link is a bearer credential stored as a hash in the database and placed in the URL fragment, so it is not sent in ordinary HTTP requests. Keep the link private and create a replacement if it is shared with the wrong person. Each ID proof is a separate PDF/JPEG/PNG file up to 8 MB and is encrypted in the database using the same `ID_PROOF_ENCRYPTION_KEY` described above. Only managers authenticated to the dashboard can list submissions and download these files. Remote tenant access requires the public HTTPS deployment settings described above; with the default local-only setup, the tenant portal is reachable only from the same computer.
+
+## Render deployment
+
+`render.yaml` defines the FastAPI web service for Render Free. Create a Neon PostgreSQL database and enter its connection URL as `DATABASE_URL` when Render prompts for Blueprint secrets; the app includes the Psycopg 3 SQLAlchemy driver. Render's free web filesystem is temporary, so set `TENANT_REGISTRY_MODE=database`. Tenant records and encrypted ID proofs then remain in PostgreSQL. The dashboard can download the current `tenants.xlsx`; after editing it, upload the workbook in the dashboard to apply changes to the database. The generated workbook itself is not durable on Render.
+
+The Render Blueprint derives `PUBLIC_APP_URL` from Render's assigned HTTPS URL. Enter manager dashboard credentials, the existing `ID_PROOF_ENCRYPTION_KEY`, and KSEB credentials in Render's secret prompts; do not commit `.env` or workbook/database files. Keep an independent secure backup of the database and encryption key. Render Free services can sleep after 15 minutes without traffic, and the free plan does not provide a reliable always-running monthly scheduler; use the dashboard's KSEB fetch action or set up a separate scheduled runner for monthly retrieval.
 
 ## KSEB solar and electricity bills
 

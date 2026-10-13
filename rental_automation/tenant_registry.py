@@ -6,7 +6,8 @@ import tempfile
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -156,8 +157,10 @@ def upsert_tenant_workbook_row(values: dict, source: Path = TENANT_WORKBOOK_PATH
 
 def export_tenants_workbook(session: Session, source: Path = TENANT_WORKBOOK_PATH) -> int:
     """Write the current database tenant registry back to the workbook."""
+    source = Path(source)
+    source.parent.mkdir(parents=True, exist_ok=True)
     try:
-        workbook = load_workbook(source)
+        workbook = load_workbook(source) if source.exists() else _new_registry_workbook()
     except Exception as exc:
         raise ValueError(f"Could not open tenant workbook {source}: {exc}") from exc
     try:
@@ -210,6 +213,22 @@ def export_tenants_workbook(session: Session, source: Path = TENANT_WORKBOOK_PAT
         return len(tenants)
     finally:
         workbook.close()
+
+
+def _new_registry_workbook() -> Workbook:
+    """Create an empty workbook when a deployment has no local data file."""
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = TENANT_WORKSHEET
+    sheet.append(TENANT_COLUMNS)
+    for cell in sheet[1]:
+        cell.font = Font(bold=True)
+    sheet.freeze_panes = "A2"
+    instructions = workbook.create_sheet("Instructions")
+    instructions.append(["Tenant workbook"])
+    instructions.append(["Add or update tenants on the Tenants sheet using unit_number."])
+    instructions.append(["For cloud deployments, upload the edited workbook in the admin dashboard."])
+    return workbook
 
 
 def _import_rows(
