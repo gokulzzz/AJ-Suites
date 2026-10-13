@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Review and sign rental agreement</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#17201d;background:#f4f6f3;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0}.shell{max-width:850px;margin:auto;padding:28px 18px 56px}
+    .card{background:#fff;border:1px solid #e2e9e4;border-radius:15px;padding:22px;margin-bottom:15px;box-shadow:0 3px 12px #152e1c08}
+    h1{font-size:23px;margin:0 0 5px;letter-spacing:-.5px}h2{font-size:16px;margin:0 0 14px}p{line-height:1.55}.muted,.hint{color:#687570;font-size:13px;line-height:1.55}
+    .notice{padding:13px 15px;border-radius:10px;background:#e8f2ec;color:#245c4b;margin:16px 0}.notice.error{background:#fff0ed;color:#a13625}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.item{border:1px solid #edf0ee;border-radius:10px;padding:11px}.item strong{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#718079;margin-bottom:5px}.item span{overflow-wrap:anywhere}
+    .terms{white-space:pre-wrap;line-height:1.6}.occupants{width:100%;border-collapse:collapse;font-size:13px}.occupants td,.occupants th{text-align:left;vertical-align:top;border-top:1px solid #edf0ee;padding:9px 7px;overflow-wrap:anywhere}.occupants th{font-size:11px;text-transform:uppercase;color:#718079}
+    label{display:block;font-size:13px;font-weight:650;margin:12px 0 6px}input[type=text]{width:100%;font:inherit;border:1px solid #dce3df;border-radius:9px;padding:10px 12px}
+    canvas{display:block;width:100%;height:155px;border:1px solid #cfdad3;border-radius:9px;background:#fff;touch-action:none;cursor:crosshair}
+    button,.download{display:inline-block;border:0;border-radius:9px;padding:10px 15px;background:#155f4b;color:#fff;font:inherit;font-weight:650;text-decoration:none;cursor:pointer}
+    button.secondary{background:#e8efeb;color:#245c4b}button:disabled{opacity:.55;cursor:wait}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+    .warning{font-size:12px;color:#687570;line-height:1.55;border-top:1px solid #edf0ee;margin-top:16px;padding-top:13px}
+    .proof-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(180px,1.2fr) auto;gap:10px;align-items:center;border-top:1px solid #edf0ee;padding:12px 0}.proof-row input[type=file]{font:inherit;font-size:12px;max-width:100%}.proof-status{font-size:12px;color:#687570}
+    @media(max-width:600px){.shell{padding:17px 12px 35px}.card{padding:16px}.grid{grid-template-columns:1fr}h1{font-size:20px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <h1>Review and sign rental agreement</h1>
+      <div id="reference" class="muted">Loading agreement…</div>
+      <div id="notice" class="notice" hidden></div>
+    </section>
+    <section id="agreement" class="card" hidden>
+      <h2>Parties and property</h2>
+      <div id="parties" class="grid"></div>
+      <h2 style="margin-top:22px">Dates and payment terms</h2>
+      <div id="dates" class="grid"></div>
+      <h2 style="margin-top:22px">Other residents</h2>
+      <div id="occupants"></div>
+      <h2 style="margin-top:22px">Additional terms</h2>
+      <div id="terms" class="terms"></div>
+    </section>
+    <section id="id-proof-panel" class="card" hidden>
+      <h2>Occupant government ID proofs</h2>
+      <p class="muted">Upload one separate PDF, JPEG, or PNG for each listed person. A single PDF can include both sides of an ID. Files are encrypted before storage; the app does not read or extract ID numbers.</p>
+      <label style="display:flex;align-items:flex-start;gap:9px;font-weight:500;line-height:1.45"><input id="id-proof-authorization" type="checkbox" style="margin-top:3px">I confirm I am authorized to submit the selected occupant's ID proof and that they agree to its use for this tenancy.</label>
+      <div id="id-proof-occupants"></div>
+    </section>
+    <section id="signature-panel" class="card" hidden>
+      <h2 id="sign-heading">Electronic signature</h2>
+      <p id="sign-copy" class="muted"></p>
+      <label for="signer-name">Type your full name as shown in this agreement</label>
+      <input id="signer-name" type="text" autocomplete="name" maxlength="200">
+      <label for="signature">Draw your signature in the box</label>
+      <canvas id="signature" aria-label="Draw signature here"></canvas>
+      <div class="actions">
+        <button id="clear-signature" class="secondary" type="button">Clear signature</button>
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:9px;font-weight:500;line-height:1.45">
+        <input id="consent" type="checkbox" style="margin-top:3px">
+        I have reviewed these terms and agree to sign this agreement electronically.
+      </label>
+      <div class="actions"><button id="sign-button" type="button">Sign agreement</button></div>
+      <div class="warning">This form records a drawn signature image, typed name, and server timestamp. It is not Aadhaar eSign or a Digital Signature Certificate (DSC), and it does not independently verify identity. Check applicable stamp duty, execution, and registration requirements for this agreement.</div>
+    </section>
+    <section id="complete-panel" class="card" hidden>
+      <h2>Signature recorded</h2>
+      <p id="complete-copy" class="muted"></p>
+      <a id="pdf-link" class="download" href="#" hidden>Download signed agreement PDF</a>
+    </section>
+  </main>
+<script>
+  const $=id=>document.getElementById(id);
+  const token=location.hash.slice(1);
+  let agreement=null, drawing=false, hasInk=false, ctx=null;
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const date=value=>new Date(value+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'});
+  const money=value=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(Number(value||0));
+  function message(text,error=false){const el=$('notice');el.textContent=text;el.className=error?'notice error':'notice';el.hidden=false}
+  async function call(url,options={}){const response=await fetch(url,{cache:'no-store',...options,headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`,...(options.headers||{})}});const data=await response.json();if(!response.ok)throw new Error(data.detail||'Request failed');return data}
+  function info(label,value){return `<div class="item"><strong>${esc(label)}</strong><span>${esc(value||'—')}</span></div>`}
+  function render(data){agreement=data;$('reference').textContent=`Agreement ${data.agreement_code} · Status ${data.status.replaceAll('_',' ').toLowerCase()}`;$('agreement').hidden=false;
+    $('parties').innerHTML=info('Landlord',`${data.landlord.name} · ${data.landlord.phone}${data.landlord.email?' · '+data.landlord.email:''}`)+info('Main tenant',`${data.tenant.name} · ${data.tenant.phone}${data.tenant.email?' · '+data.tenant.email:''}`)+info('Rental property',data.property_address);
+    $('dates').innerHTML=info('Check-in date',date(data.check_in_date))+info('Rental period',`${date(data.rental_start_date)} to ${date(data.rental_end_date)}`)+info('Monthly rent',money(data.monthly_rent))+info('Security deposit',money(data.security_deposit))+info('Rent due',`By day ${data.rent_due_day} of each month`);
+    $('occupants').innerHTML=data.occupants.length?`<div style="overflow:auto"><table class="occupants"><thead><tr><th>Name</th><th>Relationship</th><th>Phone</th><th>Email</th></tr></thead><tbody>${data.occupants.map(o=>`<tr><td>${esc(o.name)}</td><td>${esc(o.relationship_to_tenant||'—')}</td><td>${esc(o.phone)}</td><td>${esc(o.email||'—')}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No additional residents listed.</p>';
+    $('terms').textContent=data.additional_terms||'No additional terms supplied.';
+    $('id-proof-panel').hidden=data.role!=='tenant';
+    if(data.signed_by_me){$('complete-panel').hidden=false;$('complete-copy').textContent=`Your signature was recorded for ${data.signed_name} at ${new Date(data.signed_at).toLocaleString()}. Agreement status: ${data.status.replaceAll('_',' ').toLowerCase()}.`;$('signature-panel').hidden=true;if(data.pdf_available){$('pdf-link').hidden=false}else{$('complete-copy').textContent+=' The other party still needs to sign before the completed PDF is available.'}return}
+    if(data.status==='SIGNED'){$('complete-panel').hidden=false;$('signature-panel').hidden=true;$('complete-copy').textContent='Both parties have signed this agreement.';$('pdf-link').hidden=false;return}
+    $('signature-panel').hidden=false;$('sign-heading').textContent=`Sign as ${data.role}`;$('sign-copy').textContent=`Named signer: ${data.expected_signer_name}. Review the full agreement above, then type this name and draw your signature.`;$('signer-name').value=data.expected_signer_name;
+  }
+  function renderIdentityDocuments(occupants){$('id-proof-occupants').innerHTML=occupants.map(o=>`<div class="proof-row"><div><strong>${esc(o.occupant_name)}</strong><br><span class="proof-status">${o.uploaded?`Uploaded ${new Date(o.uploaded_at).toLocaleString()} · ${(o.byte_length/1024).toFixed(0)} KB`:'No proof uploaded yet'}</span></div><input type="file" data-id-file="${esc(o.occupant_key)}" accept="application/pdf,image/jpeg,image/png"><button class="secondary small" type="button" data-upload-id-proof="${esc(o.occupant_key)}">${o.uploaded?'Replace proof':'Upload proof'}</button></div>`).join('')}
+  async function refreshIdentityDocuments(){try{const data=await call('/api/signing/identity-documents');renderIdentityDocuments(data.occupants)}catch(e){$('id-proof-occupants').textContent=`Could not load ID proof status: ${e.message}`}}
+  $('id-proof-occupants').addEventListener('click',async e=>{const button=e.target.closest('[data-upload-id-proof]');if(!button)return;const fileInput=Array.from($('id-proof-occupants').querySelectorAll('[data-id-file]')).find(input=>input.dataset.idFile===button.dataset.uploadIdProof);const file=fileInput?.files[0];if(!file){message('Choose an ID proof file first.',true);return}if(!$('id-proof-authorization').checked){message('Confirm you are authorized to submit this occupant’s ID proof.',true);return}if(file.size>8*1024*1024){message('Each ID proof must be 8 MB or smaller.',true);return}button.disabled=true;try{await call(`/api/signing/identity-documents/${encodeURIComponent(button.dataset.uploadIdProof)}`,{method:'POST',body:file,headers:{'Content-Type':file.type,'X-ID-Proof-Consent':'true'}});message(`Uploaded ID proof for ${button.parentElement.querySelector('strong').textContent}.`);await refreshIdentityDocuments()}catch(err){message(err.message,true)}finally{button.disabled=false}});
+  function setupCanvas(){const canvas=$('signature');const ratio=Math.max(window.devicePixelRatio||1,1);const rect=canvas.getBoundingClientRect();canvas.width=Math.round(rect.width*ratio);canvas.height=Math.round(rect.height*ratio);ctx=canvas.getContext('2d');ctx.scale(ratio,ratio);ctx.lineWidth=2.4;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#17201d';
+    const point=e=>{const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+    canvas.addEventListener('pointerdown',e=>{drawing=true;hasInk=true;canvas.setPointerCapture(e.pointerId);const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+.1,p.y+.1);ctx.stroke()});
+    canvas.addEventListener('pointermove',e=>{if(!drawing)return;const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke()});
+    for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,()=>{drawing=false});
+    $('clear-signature').addEventListener('click',()=>{ctx.clearRect(0,0,canvas.width,canvas.height);hasInk=false});
+  }
+  $('sign-button').addEventListener('click',async()=>{if(!agreement)return;if(!hasInk){message('Draw your signature before continuing.',true);return}if(!$('consent').checked){message('Confirm that you agree to the displayed terms.',true);return}const button=$('sign-button');button.disabled=true;
+    try{const data=await call('/api/signing',{method:'POST',body:JSON.stringify({signer_name:$('signer-name').value,signature_data_url:$('signature').toDataURL('image/png'),consent:true})});message(data.status==='SIGNED'?'Both parties have signed. The agreement PDF is ready.':'Your signature was recorded. The other party still needs to sign.');const current=await call('/api/signing');render(current);if(current.role==='tenant')await refreshIdentityDocuments()}catch(e){message(e.message,true)}finally{button.disabled=false}});
+  $('pdf-link').addEventListener('click',async e=>{e.preventDefault();try{const response=await fetch('/api/signing/pdf',{cache:'no-store',headers:{'Authorization':`Bearer ${token}`}});if(!response.ok){const data=await response.json();throw new Error(data.detail||'PDF download failed')}const blob=await response.blob();const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`rental-agreement-${agreement.agreement_code}.pdf`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(err){message(err.message,true)}});
+  async function load(){try{const data=await call('/api/signing');render(data);if(data.role==='tenant')await refreshIdentityDocuments();if(!data.signed_by_me&&data.status!=='SIGNED')requestAnimationFrame(setupCanvas)}catch(e){$('reference').textContent='This signing link is invalid or unavailable.';message(e.message,true)}}
+  load();
+</script>
+</body>
+</html>

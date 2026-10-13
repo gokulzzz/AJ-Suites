@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rental Payment Desk</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#17201d;background:#f4f6f3;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0}.shell{max-width:1180px;margin:auto;padding:34px 24px 60px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+    .brand{display:flex;gap:13px;align-items:center}.mark{width:42px;height:42px;border-radius:13px;background:#145d49;color:white;display:grid;place-items:center;font-size:21px;font-weight:750}
+    h1{font-size:21px;margin:0;letter-spacing:-.5px}.subtitle{font-size:13px;color:#687570;margin-top:4px}
+    .month{display:flex;gap:10px;align-items:center}.month input,.field input{font:inherit;border:1px solid #dce3df;border-radius:9px;padding:10px 12px;background:#fff}
+    button{font:inherit;border:0;border-radius:9px;padding:10px 15px;background:#155f4b;color:#fff;font-weight:650;cursor:pointer}
+    button:hover{background:#104b3b}button.secondary{background:#e8efeb;color:#245c4b}button.secondary:hover{background:#dbe8e1}
+    .notice{display:none;padding:12px 15px;border-radius:10px;margin:0 0 18px;background:#e6f2ec;color:#155f4b;font-size:14px}.notice.error{display:block;background:#fff0ed;color:#a13625}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}.card,.panel{background:#fff;border:1px solid #e7ebe8;border-radius:14px;box-shadow:0 3px 12px #152e1c08}
+    .stat{padding:18px 20px}.label{color:#718079;font-size:12px;font-weight:650;letter-spacing:.04em;text-transform:uppercase}.value{font-size:25px;font-weight:720;margin-top:9px;letter-spacing:-.6px}
+    .columns{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(310px,.9fr);gap:18px}.panel{padding:20px;margin-bottom:18px}.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:17px}
+    h2{margin:0;font-size:16px;letter-spacing:-.2px}.hint{font-size:12px;color:#7a8781;margin-top:4px}
+    .table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th{text-align:left;color:#78847e;font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:650;padding:0 10px 11px}
+    td{border-top:1px solid #edf0ee;padding:12px 10px;white-space:nowrap}td:first-child{font-weight:650}.muted{color:#78847e;font-weight:450}
+    .badge{display:inline-block;padding:5px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.03em;background:#fff2d9;color:#94600a}.badge.PAID{background:#e5f4eb;color:#20714b}.badge.PARTIALLY_PAID{background:#edf2ff;color:#405aaf}
+    .empty{padding:30px 12px;text-align:center;color:#748079;font-size:13px;border:1px dashed #dce4df;border-radius:10px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:11px;color:#687570;font-weight:650}.field input{width:100%;padding:9px 10px;font-size:13px}.field.wide{grid-column:1/-1}
+    .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.small{font-size:12px;padding:9px 12px}.activity{display:grid;gap:10px}.activity-item{border:1px solid #edf0ee;border-radius:10px;padding:12px;font-size:12px;line-height:1.5;color:#40514a}.activity-item strong{color:#1b3027}.code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;color:#155f4b;overflow-wrap:anywhere}
+    .registry-table td{white-space:normal;min-width:100px}.registry-table td:first-child{min-width:150px}.registry-table .badge{white-space:nowrap}.registry-table .badge.inactive{background:#edf0ee;color:#687570}
+    .field select,.field textarea{font:inherit;border:1px solid #dce3df;border-radius:9px;padding:9px 10px;background:#fff;width:100%;font-size:13px}.field textarea{min-height:92px;resize:vertical}.occupant-row{display:grid;grid-template-columns:1.1fr 1fr 1.2fr 1.2fr auto;gap:8px;align-items:end;border:1px solid #edf0ee;border-radius:10px;padding:10px;margin:9px 0}.occupant-row .field input{min-width:0}.link-card{border:1px solid #e7ebe8;border-radius:10px;padding:12px;margin-top:10px}.agreement-links{margin-top:12px}.agreement-list{display:grid;gap:9px}.agreement-row{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr auto;gap:12px;align-items:center;border-top:1px solid #edf0ee;padding:12px 2px;font-size:12px}.agreement-row .small{white-space:nowrap}.badge.PENDING{background:#fff2d9;color:#94600a}.badge.PARTIALLY_SIGNED{background:#edf2ff;color:#405aaf}.badge.SIGNED{background:#e5f4eb;color:#20714b}
+    @media(max-width:850px){.occupant-row{grid-template-columns:1fr 1fr}.agreement-row{grid-template-columns:1fr 1fr}.agreement-row .actions{grid-column:1/-1;margin-top:0}}
+    @media(max-width:850px){.stats{grid-template-columns:repeat(2,1fr)}.columns{grid-template-columns:1fr}}@media(max-width:520px){.shell{padding:22px 14px 44px}header{align-items:flex-start;gap:15px;flex-direction:column}.stats{gap:9px}.stat{padding:14px}.value{font-size:21px}.month{width:100%}.month input{flex:1}}
+
+    /* Estate-inspired premium palette: evergreen, warm ivory and brushed brass. */
+    :root{color:#20352d;background:#f3f0e8;font-family:Inter,"Aptos",ui-sans-serif,system-ui,sans-serif;font-synthesis:none;--evergreen:#173c30;--evergreen-deep:#112e25;--brass:#b18a52;--ivory:#fbfaf6;--sand:#eee9de;--line:#e8e2d6;--muted:#7d8981;--ink:#20352d;--shadow:0 12px 34px #28392e0b}
+    body{background:radial-gradient(ellipse at 4% 0%,#e9e4d7 0,transparent 33%),#f3f0e8;color:var(--ink)}
+    .shell{max-width:1320px;padding:36px 30px 76px}
+    header{padding-bottom:21px;margin-bottom:25px;border-bottom:1px solid #ded8ca}
+    .brand{gap:14px}.mark{width:47px;height:47px;border-radius:14px;background:var(--evergreen);color:#d8bd89;box-shadow:inset 0 0 0 1px #ffffff1a;font-family:Georgia,serif;font-size:23px}
+    h1,h2{font-family:Georgia,"Times New Roman",serif;color:#203a30}h1{font-size:27px;letter-spacing:-.65px;font-weight:500}.subtitle{font-size:10px;color:#7a837c;letter-spacing:.085em;text-transform:uppercase;margin-top:6px}
+    .month{gap:9px}.month input{border-color:#ddd5c5;background:#fbfaf6;color:#263c32;border-radius:10px;min-height:40px}.month input:focus,.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#b28a52;box-shadow:0 0 0 3px #b18a5218}
+    button{border-radius:9px;background:var(--evergreen);color:#fbfaf6;font-weight:650;transition:background .16s,transform .16s,box-shadow .16s}button:hover{background:#245640;box-shadow:0 5px 14px #173c3022;transform:translateY(-1px)}button:disabled{opacity:.55;cursor:wait;transform:none;box-shadow:none}button.secondary{background:#fbfaf6;color:#526a5a;border:1px solid #d8d0c0}button.secondary:hover{background:#f2eee5;color:#254435}
+    .notice{background:#e8efe8;color:#23563f;border:1px solid #d5e2d5;border-radius:11px;box-shadow:0 8px 25px #273b2d0b}.notice.error{background:#fbede7;color:#8c3928;border-color:#efd4c8}
+    .stats{gap:15px;margin-bottom:23px}.card,.panel{border:1px solid var(--line);border-radius:17px;background:var(--ivory);box-shadow:var(--shadow)}.stat{position:relative;overflow:hidden;padding:21px 22px}.stat:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#b28a52,#d6c19b 56%,#e9e2d2)}.stat:after{content:"";position:absolute;width:86px;height:86px;right:-34px;bottom:-48px;border:1px solid #b18a521c;border-radius:50%}.label{color:#8b877b;font-size:10px;letter-spacing:.12em}.value{font-family:Georgia,"Times New Roman",serif;color:#244536;font-size:30px;font-weight:500;letter-spacing:-.6px}
+    .columns{gap:20px}.panel{padding:23px;margin-bottom:20px}.panel-head{align-items:flex-start;margin-bottom:19px}.panel-head>div:first-child{border-left:2px solid #b18a52;padding-left:12px}h2{font-size:19px;letter-spacing:-.25px;font-weight:500}.hint{font-size:11px;color:#82877e;line-height:1.55;margin-top:5px}
+    .table-wrap{border:1px solid #eee9df;border-radius:12px;background:#fffefa}table{font-size:12px}th{background:#f5f2eb;color:#837c6d;font-size:9px;letter-spacing:.12em;padding:12px 11px}td{border-top:1px solid #efebe3;padding:13px 11px;color:#394b41}tbody tr:first-child td{border-top:0}tbody tr:hover td{background:#fbf8f1}td:first-child{font-weight:650;color:#243d31}.muted{color:#899188}.registry-table td{min-width:105px}.registry-table td:first-child{min-width:145px}
+    .badge{padding:5px 9px;border:1px solid #e9ddc4;border-radius:99px;background:#f7f0e1;color:#87652e;font-size:9px;letter-spacing:.08em}.badge.PAID,.badge.SIGNED{background:#eaf1e9;border-color:#d7e3d5;color:#386047}.badge.PARTIALLY_PAID,.badge.PARTIALLY_SIGNED{background:#f0eee4;border-color:#e1dcc9;color:#716334}.badge.inactive{background:#f0efea;border-color:#e5e2da;color:#777a73}
+    .empty{padding:28px 14px;background:#fdfcf9;border:1px dashed #ded8ca;border-radius:12px;color:#80867e;font-size:12px;line-height:1.6}
+    .form-grid{gap:13px}.field{gap:7px}.field label{color:#737c73;font-size:10px;letter-spacing:.03em}.field input,.field select,.field textarea,.month input{font:inherit;border:1px solid #ded8cb;border-radius:9px;background:#fffefa;color:#263c32;padding:10px 11px;font-size:12px;transition:border-color .16s,box-shadow .16s}.field input::placeholder,.field textarea::placeholder{color:#a7aaa2}.field textarea{min-height:100px}.field select{appearance:auto}
+    .occupant-row{border-color:#e9e3d8;background:#fdfcf9;border-radius:11px;padding:12px;margin:9px 0}.occupant-row .field input{min-width:0}.actions{gap:8px}.small{font-size:10px;padding:9px 11px}.activity-item{border:1px solid #eae5db;background:#fdfcf9;border-radius:11px;color:#506056}.activity-item strong{color:#294638}.code{color:#8b6c3a}.link-card{border-color:#e7dfd0;border-radius:12px;background:#fdfcf8;padding:14px}.agreement-links{margin-top:14px}.agreement-list{gap:0}.agreement-row{border-top:1px solid #eae5da;padding:15px 4px;font-size:11px;align-items:start}.agreement-row:first-child{border-top:0}.agreement-row .actions{margin-top:0}.agreement-row .small{white-space:normal}.field select,.field textarea{font-size:12px}
+    .kseb-pdf input, input[type=file]{accent-color:#947443}.panel .actions input[type=file]{font-size:11px;max-width:100%;color:#657168}.panel .actions input[type=file]::file-selector-button{border:1px solid #d9d1c1;background:#f5f1e8;color:#506354;border-radius:7px;padding:8px 10px;margin-right:9px;cursor:pointer}
+    #tenant-portal-submissions .agreement-row{padding:18px 4px}.portal-review-occupants{display:grid;gap:7px;overflow-wrap:anywhere}.portal-review-occupants>div{border-left:1px solid #d9c8a8;padding-left:8px}.agreement-row .actions{align-items:flex-start}
+    @media(max-width:850px){.shell{padding:27px 20px 56px}.columns{grid-template-columns:1fr}.agreement-row{grid-template-columns:1fr 1fr}.agreement-row .actions{grid-column:1/-1;margin-top:2px}}
+    @media(max-width:520px){.shell{padding:20px 13px 42px}header{align-items:stretch;gap:14px;flex-direction:column}.brand{align-items:center}.month{width:100%}.month input{flex:1}.stats{gap:9px}.stat{padding:17px 15px}.value{font-size:24px}.panel{padding:17px 14px}.panel-head{gap:10px}.panel-head h2{font-size:17px}.form-grid{grid-template-columns:1fr}.field.wide{grid-column:auto}.agreement-row{grid-template-columns:1fr}.agreement-row .actions{grid-column:auto}.occupant-row{grid-template-columns:1fr}.table-wrap{max-width:calc(100vw - 56px)}}
+    .solar-panel{overflow:hidden}.solar-panel>.panel-head{align-items:center}.workbook-link{display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap}
+    a.small.whatsapp-link{display:inline-flex;align-items:center;border:1px solid #d8e6d8;border-radius:8px;background:#eaf2e9;color:#365f43;text-decoration:none}a.small.whatsapp-link:hover{background:#dcebdc}
+    .solar-totals{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-bottom:15px}
+    .solar-total{padding:13px 14px;border:1px solid #e9e3d8;border-radius:11px;background:linear-gradient(145deg,#fffefa,#f7f4ed)}
+    .solar-total span{display:block;color:#898476;font-size:9px;letter-spacing:.09em;text-transform:uppercase}.solar-total strong{display:block;margin-top:7px;color:#294638;font:500 18px Georgia,serif;white-space:nowrap}
+    .solar-table-wrap{overflow:auto;border:1px solid #eee9df;border-radius:12px;background:#fffefa}.solar-table{min-width:980px}.solar-table td:first-child{font-weight:600}.solar-detail summary{color:#87652e;cursor:pointer;font-size:10px}.solar-detail table{margin-top:8px;min-width:320px}.solar-detail th,.solar-detail td{padding:6px 8px;font-size:10px}
+    @media(max-width:1000px){.solar-totals{grid-template-columns:repeat(3,minmax(125px,1fr))}}
+    @media(max-width:600px){.solar-panel>.panel-head{align-items:flex-start;flex-direction:column}.solar-totals{grid-template-columns:repeat(2,minmax(120px,1fr))}.solar-total strong{font-size:16px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand"><div class="mark">₹</div><div><h1>Rental Payment Desk</h1><div class="subtitle">Tenant accounts · UPI reconciliation · monthly reminders</div></div></div>
+      <div class="month"><input id="month" type="month"><button class="secondary" onclick="refresh()">Refresh</button></div>
+    </header>
+    <div id="notice" class="notice"></div>
+    <section class="stats">
+      <div class="card stat"><div class="label">Active tenants</div><div class="value" id="tenant-count">—</div></div>
+      <div class="card stat"><div class="label">Bills generated</div><div class="value" id="ledger-count">—</div></div>
+      <div class="card stat"><div class="label">Pending balance</div><div class="value" id="total-due">—</div></div>
+      <div class="card stat"><div class="label">Matched payments</div><div class="value" id="payment-count">—</div></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><h2>KSEB solar and electricity</h2><div class="hint">Monthly property totals from bills linked to your WSS account</div></div><button id="kseb-fetch" class="secondary small" type="button" onclick="fetchKsebBill()">Fetch all KSEB bills</button></div>
+      <form id="kseb-upload" class="actions"><input id="kseb-pdf" type="file" accept="application/pdf" required><button class="small" type="submit">Import downloaded bill PDF</button></form>
+      <div id="kseb-content" class="empty" style="margin-top:14px">No KSEB bill imported for this month. You can fetch it from the configured WSS account or import a downloaded bill PDF.</div>
+      <div class="hint" style="margin-top:10px">This is the property service total. Tenant or beneficiary allocation is not applied.</div>
+    </section>
+    <section class="panel solar-panel">
+      <div class="panel-head"><div><h2>Consumer solar usage</h2><div class="hint">Imported, exported, solar self-use and site consumption for every connected consumer number in the selected month</div></div><a class="secondary small workbook-link" href="/api/kseb/solar-workbook">Download solar workbook</a></div>
+      <div id="solar-usage" class="empty">No per-consumer bills are available for this month.</div>
+      <div class="hint" style="margin-top:11px">Site units consumed = solar generation + grid imports − grid exports. KSEB bill payable is shown per consumer service.</div>
+    </section>
+    <div class="columns">
+      <section>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Monthly ledger</h2><div class="hint">Rent, maintenance, arrears and payments for selected month</div></div><button class="small" onclick="generateLedgers()">Generate dues</button></div>
+          <div id="ledger-table"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Reminder preview</h2><div class="hint">Preview messages without sending</div></div><button class="secondary small" onclick="previewReminders()">Preview reminders</button></div>
+          <div id="reminders" class="activity"><div class="empty">Generate dues, then preview reminders.</div></div>
+        </div>
+      </section>
+      <aside>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Add tenant</h2><div class="hint">Create a tenant account in the local database</div></div></div>
+          <form id="tenant-form" class="form-grid">
+            <div class="field"><label>Name</label><input name="name" required placeholder="Asha Rao"></div>
+            <div class="field"><label>Unit</label><input name="unit_number" required placeholder="A-12"></div>
+            <div class="field"><label>Phone / WhatsApp number</label><input name="phone" type="tel" required placeholder="+919876543210"></div>
+            <div class="field"><label>Email</label><input name="email" type="email" placeholder="asha@example.com"></div>
+            <div class="field"><label>Tenant UPI / VPA</label><input name="upi_vpa" placeholder="asha@bank"></div>
+            <div class="field"><label>Monthly rent (INR)</label><input name="monthly_rent" type="number" min="0.01" step="0.01" required placeholder="12000"></div>
+            <div class="field"><label>Maintenance (INR)</label><input name="maintenance_fee" type="number" min="0" step="0.01" value="0"></div>
+            <div class="field"><label>Deposit (INR)</label><input name="deposit_amount" type="number" min="0" step="0.01" value="0"></div>
+            <div class="field"><label>Opening balance (INR)</label><input name="opening_balance" type="number" step="0.01" value="0"></div>
+            <div class="field"><label>Due day</label><input name="due_day" type="number" min="1" max="31" placeholder="5"></div>
+            <div class="field"><label>Expected sender name</label><input name="expected_sender_name" placeholder="Asha Rao"></div>
+            <div class="field"><label>Expected payment remarks</label><input name="expected_remarks" placeholder="Flat A-12 rent"></div>
+            <div class="field wide"><button type="submit">Save tenant</button></div>
+          </form>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Record incoming payment</h2><div class="hint">Try exact VPA matching and duplicate-safe UTRs</div></div></div>
+          <form id="payment-form" class="form-grid">
+            <div class="field"><label>Amount (INR)</label><input name="amount" type="number" min="0.01" step="0.01" required placeholder="12500"></div>
+            <div class="field"><label>Bank reference / UTR</label><input name="bank_reference_id" required placeholder="UTR202610001"></div>
+            <div class="field"><label>Sender VPA</label><input name="sender_vpa" placeholder="asha@bank"></div>
+            <div class="field"><label>Sender name (optional)</label><input name="sender_name" placeholder="Asha Rao"></div>
+            <div class="field wide"><button type="submit">Reconcile payment</button></div>
+          </form>
+        </div>
+      </aside>
+    </div>
+    <section class="panel">
+      <div class="panel-head"><div><h2>Rental agreements</h2><div class="hint">Create an agreement for a tenant and collect signatures from both parties online</div></div><button class="secondary small" type="button" onclick="refreshAgreements()">Refresh agreements</button></div>
+      <form id="agreement-form" class="form-grid">
+        <div class="field"><label>Main tenant</label><select id="agreement-tenant" name="tenant_id" required><option value="">Choose an active tenant</option></select></div>
+        <div class="field"><label>Property address</label><input name="property_address" required maxlength="1200" placeholder="Flat, building, street, town, PIN"></div>
+        <div class="field"><label>Landlord name</label><input name="landlord_name" required maxlength="200"></div>
+        <div class="field"><label>Landlord phone</label><input name="landlord_phone" required maxlength="30" placeholder="+91..."></div>
+        <div class="field"><label>Landlord email (optional)</label><input name="landlord_email" type="email" maxlength="320"></div>
+        <div class="field"><label>Check-in date</label><input name="check_in_date" type="date" required></div>
+        <div class="field"><label>Rental period starts</label><input name="rental_start_date" type="date" required></div>
+        <div class="field"><label>Rental period ends</label><input name="rental_end_date" type="date" required></div>
+        <div class="field"><label>Monthly rent (INR)</label><input name="monthly_rent" type="number" min="0.01" step="0.01" required></div>
+        <div class="field"><label>Security deposit (INR)</label><input name="security_deposit" type="number" min="0" step="0.01" value="0" required></div>
+        <div class="field"><label>Rent due day each month</label><input name="rent_due_day" type="number" min="1" max="31" value="5" required></div>
+        <div class="field wide"><label>Additional terms</label><textarea name="additional_terms" maxlength="10000" placeholder="Add any agreed property or tenancy terms. Leave blank if none."></textarea></div>
+        <div class="field wide"><label>Other people staying with the main tenant</label><div id="agreement-occupants"></div><button class="secondary small" type="button" onclick="addAgreementOccupant()">Add resident</button></div>
+        <div class="field wide"><button type="submit">Create agreement and signing links</button></div>
+      </form>
+      <div class="hint" style="margin-top:13px">The captured signature is a drawn image and typed name, not Aadhaar eSign or a Digital Signature Certificate. Verify the stamp duty and registration requirements for the agreed lease.</div>
+      <div id="agreement-link-status" class="hint" style="margin-top:10px"></div>
+      <div id="agreement-links" class="agreement-links"></div>
+      <div class="panel-head" style="margin:22px 0 8px"><div><h2>Existing agreements</h2><div class="hint">Completed agreements can be downloaded as PDF</div></div></div>
+      <div id="agreement-list" class="agreement-list"><div class="empty">No agreements created yet.</div></div>
+      <div id="identity-document-panel" class="link-card" hidden></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><h2>Tenant registry</h2><div class="hint">Source: tenants.xlsx · saved workbook changes appear here automatically</div></div></div>
+      <div id="tenant-table"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><h2>Tenant onboarding</h2><div class="hint">Choose the main tenant and unit, create a shareable tenant details link, then review submissions here</div></div><button class="secondary small" type="button" onclick="refreshTenantPortalSubmissions()">Refresh submissions</button></div>
+      <form id="tenant-portal-invite" class="form-grid">
+        <div class="field"><label for="tenant-portal-tenant">Main tenant / agreement holder / Flat or room</label><select id="tenant-portal-tenant" required><option value="">Choose an active tenant</option></select></div>
+        <div class="field"><label>&nbsp;</label><button class="small" type="submit">Generate private details link</button></div>
+      </form>
+      <div class="hint">The selected tenant phone is used for WhatsApp sharing. WhatsApp opens a prepared message for you to review and send.</div>
+      <div id="tenant-portal-link" class="agreement-links"></div>
+      <div class="panel-head" style="margin:22px 0 8px"><div><h2>Submitted tenant details</h2><div class="hint">Review and approve the submitted contact details and UPI/VPA. Flat or room, rent and deposit stay manager-managed.</div></div></div>
+      <div id="tenant-portal-submissions" class="agreement-list"><div class="empty">No tenant portal submissions yet.</div></div>
+    </section>
+  </main>
+<script>
+  const $ = id => document.getElementById(id);
+  const money = value => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(Number(value||0));
+  const selectedMonth = () => $('month').value;
+  let activeAgreementTenants=[];
+  function alertUser(message,error=false){const el=$('notice');el.textContent=message;el.className=error?'notice error':'notice';el.style.display='block';setTimeout(()=>{el.style.display='none'},5000)}
+  async function api(url,options={}){const rawBody=options.body instanceof FormData||options.body instanceof Blob;const headers=rawBody?{}:{'Content-Type':'application/json'};const response=await fetch(url,{...options,headers:{...headers,...options.headers}});const data=await response.json();if(!response.ok)throw new Error(data.detail||'Request failed');return data}
+  function renderLedger(rows){if(!rows.length){$('ledger-table').innerHTML='<div class="empty">No ledgers yet. Add a tenant and generate this month’s dues.</div>';return}
+    $('ledger-table').innerHTML='<div class="table-wrap"><table><thead><tr><th>Tenant / unit</th><th>Rent + fees</th><th>Arrears</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead><tbody>'+rows.map(r=>`<tr><td>${esc(r.tenant_name)}<br><span class="muted">${esc(r.unit_number)}</span></td><td>${money(Number(r.rent_billed)+Number(r.maintenance_billed))}</td><td>${money(r.arrears_brought_forward)}</td><td>${money(r.amount_paid)}</td><td><strong>${money(r.net_due)}</strong></td><td><span class="badge ${esc(r.status)}">${esc(r.status.replaceAll('_',' '))}</span></td></tr>`).join('')+'</tbody></table></div>'}
+  function renderTenants(rows){if(!rows.length){$('tenant-table').innerHTML='<div class="empty">No tenants yet. Add one here or enter a row in tenants.xlsx.</div>';return}
+    $('tenant-table').innerHTML='<div class="table-wrap registry-table"><table><thead><tr><th>Name</th><th>Unit</th><th>Phone / email</th><th>Rent</th><th>Maintenance</th><th>Deposit</th><th>Opening balance</th><th>Due day</th><th>UPI / VPA</th><th>Expected sender / remarks</th><th>Status</th></tr></thead><tbody>'+rows.map(t=>`<tr><td>${esc(t.name)}</td><td>${esc(t.unit_number)}</td><td>${esc(t.phone)}${t.email?`<br><span class="muted">${esc(t.email)}</span>`:''}</td><td>${money(t.monthly_rent)}</td><td>${money(t.maintenance_fee)}</td><td>${money(t.deposit_amount)}</td><td>${money(t.opening_balance)}</td><td>${t.due_day??'—'}</td><td>${esc(t.upi_vpa||'—')}</td><td>${esc(t.expected_sender_name||'—')}${t.expected_remarks?`<br><span class="muted">${esc(t.expected_remarks)}</span>`:''}</td><td><span class="badge ${t.is_active?'PAID':'inactive'}">${t.is_active?'Active':'Inactive'}</span></td></tr>`).join('')+'</tbody></table></div>'}
+  function esc(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function renderAgreementTenantOptions(tenants){activeAgreementTenants=tenants.filter(t=>t.is_active);for(const id of ['agreement-tenant','tenant-portal-tenant']){const select=$(id),selected=select.value;select.innerHTML='<option value="">Choose an active tenant</option>'+activeAgreementTenants.map(t=>`<option value="${t.id}">${esc(t.name)} · ${esc(t.unit_number)}</option>`).join('');if(activeAgreementTenants.some(t=>String(t.id)===selected))select.value=selected}}
+  function addAgreementOccupant(){const row=document.createElement('div');row.className='occupant-row';row.innerHTML='<div class="field"><label>Name</label><input data-resident="name" required maxlength="200" placeholder="Full name"></div><div class="field"><label>Relationship</label><input data-resident="relationship_to_tenant" maxlength="100" placeholder="Optional"></div><div class="field"><label>Phone</label><input data-resident="phone" required maxlength="30" placeholder="+91..."></div><div class="field"><label>Email</label><input data-resident="email" type="email" maxlength="320" placeholder="Optional"></div><button type="button" class="secondary small" aria-label="Remove resident">Remove</button>';row.querySelector('button').addEventListener('click',()=>row.remove());$('agreement-occupants').append(row)}
+  $('agreement-tenant').addEventListener('change',()=>{const tenant=activeAgreementTenants.find(t=>String(t.id)===$('agreement-tenant').value);if(!tenant)return;$('agreement-form').elements.monthly_rent.value=tenant.monthly_rent;$('agreement-form').elements.security_deposit.value=tenant.deposit_amount||'0';$('agreement-form').elements.rent_due_day.value=tenant.due_day||5;const today=new Date(),localDate=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);for(const key of ['check_in_date','rental_start_date'])if(!$('agreement-form').elements[key].value)$('agreement-form').elements[key].value=localDate});
+  function appendAgreementLink(role,url,remote){const target=$('agreement-links');const link=document.createElement('div');link.className='link-card';link.innerHTML=`<strong>${role==='tenant'?'Tenant':'Landlord'} signing link</strong><div class="code">${esc(url)}</div><div class="actions"><a class="small" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open</a><button class="secondary small" type="button" data-copy-link="${esc(url)}">Copy link</button></div>`;target.append(link);$('agreement-link-status').textContent=remote?'Remote links use the configured HTTPS app address. Share each link only with its named signer.':'These links use this local app address. For tenants to sign remotely, configure HTTPS hosting and manager authentication in .env.'}
+  $('agreement-links').addEventListener('click',async e=>{const button=e.target.closest('[data-copy-link]');if(!button)return;try{await navigator.clipboard.writeText(button.dataset.copyLink);alertUser('Signing link copied to clipboard.')}catch{alertUser('Clipboard access failed. Select and copy the signing link shown above.',true)}});
+  $('agreement-list').addEventListener('click',async e=>{const docsButton=e.target.closest('[data-manage-identity]');if(docsButton){docsButton.disabled=true;try{const d=await api(`/api/agreements/${docsButton.dataset.manageIdentity}/identity-documents`);const panel=$('identity-document-panel');panel.hidden=false;panel.innerHTML=`<strong>ID proofs · ${esc(d.unit_number)} · ${esc(d.tenant_name)}</strong><div class="activity" style="margin-top:10px">${d.occupants.map(o=>`<div class="activity-item"><strong>${esc(o.occupant_name)}</strong><br>${o.uploaded?`Uploaded ${new Date(o.uploaded_at).toLocaleString()} · ${(o.byte_length/1024).toFixed(0)} KB · ${esc(o.content_type)}<div class="actions"><a class="small" href="/api/agreements/${d.agreement_id}/identity-documents/${encodeURIComponent(o.occupant_key)}">Download proof</a></div>`:'<span class="muted">Not uploaded</span>'}</div>`).join('')}</div>`;panel.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(err){alertUser(err.message,true)}finally{docsButton.disabled=false}return}const button=e.target.closest('[data-replace-role]');if(!button)return;button.disabled=true;try{const d=await api(`/api/agreements/${button.dataset.agreementId}/signing-link/${button.dataset.replaceRole}`,{method:'POST'});$('agreement-links').innerHTML='';appendAgreementLink(d.role,d.signing_url,d.remote_signing_configured);alertUser(`A fresh ${d.role} link is ready. The previous link for this signer has been disabled.`)}catch(err){alertUser(err.message,true)}finally{button.disabled=false}});
+  async function refreshAgreements(){try{const data=await api('/api/agreements');const rows=data.agreements;if(!rows.length){$('agreement-list').innerHTML='<div class="empty">No agreements created yet.</div>';return}const date=value=>new Date(value+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});$('agreement-list').innerHTML=rows.map(a=>`<div class="agreement-row"><div><strong>${esc(a.tenant_name)}</strong><br><span class="muted">${esc(a.unit_number)} · ${esc(a.agreement_code.slice(0,8))}</span></div><div>Check-in ${date(a.check_in_date)}<br><span class="muted">${date(a.rental_start_date)} – ${date(a.rental_end_date)}</span></div><div>${money(a.monthly_rent)} rent<br><span class="muted">${money(a.security_deposit)} deposit</span></div><div><span class="badge ${esc(a.status)}">${esc(a.status.replaceAll('_',' '))}</span><br><span class="muted">Tenant ${a.tenant_signed?'signed':'pending'} · Landlord ${a.landlord_signed?'signed':'pending'}</span></div><div class="actions">${a.signed?`<a class="small" href="/api/agreements/${a.id}/pdf">Download PDF</a>`:''}<button class="secondary small" type="button" data-manage-identity="${a.id}">ID proofs (${a.identity_document_count}/${a.occupant_count+1})</button>${!a.tenant_signed?`<button class="secondary small" type="button" data-agreement-id="${a.id}" data-replace-role="tenant">New tenant link</button>`:''}${!a.landlord_signed?`<button class="secondary small" type="button" data-agreement-id="${a.id}" data-replace-role="landlord">New landlord link</button>`:''}</div></div>`).join('')}catch(e){$('agreement-list').innerHTML=`<div class="empty">Could not load agreements: ${esc(e.message)}</div>`}}
+  function renderTenantPortalSubmissions(rows){if(!rows.length){$('tenant-portal-submissions').innerHTML='<div class="empty">No tenant portal submissions yet.</div>';return}const when=value=>value?new Date(value).toLocaleString():'—';$('tenant-portal-submissions').innerHTML=rows.map(s=>{const uploaded=s.identity_documents.filter(d=>d.uploaded).length;return `<div class="agreement-row"><div><strong>${esc(s.tenant_name)}</strong><br><span class="muted">${esc(s.unit_number)} · ${esc(s.tenant_phone)}${s.tenant_email?` · ${esc(s.tenant_email)}`:''}</span><br><span class="muted">UPI/VPA: ${esc(s.upi_vpa||'Not provided')}</span></div><div>Submitted ${when(s.submitted_at)}<br><span class="muted">${s.occupants.length} additional occupant${s.occupants.length===1?'':'s'}</span></div><div><span class="badge ${esc(s.status)}">${esc(s.status)}</span><br><span class="muted">${uploaded}/${s.identity_documents.length} ID proofs</span></div><div class="portal-review-occupants">${s.occupants.map(o=>`<div><strong>${esc(o.name)}</strong><br><span class="muted">${esc(o.phone)}${o.email?` · ${esc(o.email)}`:''}${o.relationship_to_tenant?` · ${esc(o.relationship_to_tenant)}`:''}</span></div>`).join('')||'<span class="muted">No additional occupants</span>'}</div><div class="actions">${s.identity_documents.map(d=>d.uploaded?`<a class="small" href="/api/tenant-portal/submissions/${s.id}/identity-documents/${encodeURIComponent(d.occupant_key)}">Download ${d.occupant_key==='tenant'?'main tenant':esc(d.occupant_name)} ID</a>`:`<span class="muted">${esc(d.occupant_name)}: no ID uploaded</span>`).join('')}${s.status==='PENDING'?`<button class="small" type="button" data-approve-tenant-profile="${s.id}">Approve tenant details</button>`:''}</div></div>`}).join('')}
+  async function refreshTenantPortalSubmissions(){try{const data=await api('/api/tenant-portal/submissions');renderTenantPortalSubmissions(data.submissions)}catch(error){$('tenant-portal-submissions').innerHTML=`<div class="empty">Could not load submissions: ${esc(error.message)}</div>`}}
+  $('tenant-portal-invite').addEventListener('submit',async e=>{
+    e.preventDefault();const id=$('tenant-portal-tenant').value;if(!id)return;
+    const button=e.target.querySelector('button[type="submit"]');button.disabled=true;
+    try{
+      const data=await api(`/api/tenant-portal/invites/${id}`,{method:'POST'});
+      let whatsappNumber=String(data.tenant_phone||'').replace(/\D/g,'');
+      if(whatsappNumber.length===10)whatsappNumber='91'+whatsappNumber;
+      else if(whatsappNumber.length===11&&whatsappNumber.startsWith('0'))whatsappNumber='91'+whatsappNumber.slice(1);
+      const shareUrl=data.remote_portal_configured&&/^\d{11,15}$/.test(whatsappNumber)
+        ?`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi ${data.tenant_name}, please complete your tenant details and list everyone staying in Flat/Room ${data.unit_number}: ${data.portal_url}`)}`
+        :null;
+      const sharingHint=shareUrl
+        ?'WhatsApp opens a prepared message to the tenant number. Review it and press Send.'
+        :data.remote_portal_configured
+          ?'Add a valid WhatsApp number to this tenant record to enable direct WhatsApp sharing.'
+          :'Set PUBLIC_APP_URL to your public HTTPS app address before sharing this link outside this computer.';
+      const box=$('tenant-portal-link');
+      box.innerHTML=`<div class="link-card"><strong>Tenant details link / ${esc(data.unit_number)} / ${esc(data.tenant_name)}</strong><div class="code">${esc(data.portal_url)}</div><div class="hint">WhatsApp recipient: ${esc(data.tenant_phone||'Not set')}</div><div class="actions"><a class="small" href="${esc(data.portal_url)}" target="_blank" rel="noopener noreferrer">Open portal</a><button class="secondary small" type="button" data-copy-tenant-portal="${esc(data.portal_url)}">Copy tenant link</button>${shareUrl?`<a class="small whatsapp-link" href="${esc(shareUrl)}" target="_blank" rel="noopener noreferrer">Open WhatsApp message</a>`:''}</div><div class="hint">${sharingHint} Creating a new link replaces the previous link for this unit.</div></div>`;
+      alertUser(`Tenant details link ready for unit ${data.unit_number}.`)
+    }catch(error){alertUser(error.message,true)}finally{button.disabled=false}
+  });
+  $('tenant-portal-link').addEventListener('click',async e=>{const button=e.target.closest('[data-copy-tenant-portal]');if(!button)return;try{await navigator.clipboard.writeText(button.dataset.copyTenantPortal);alertUser('Tenant portal link copied.')}catch{alertUser('Clipboard access failed. Select and copy the link shown above.',true)}});
+  $('tenant-portal-submissions').addEventListener('click',async e=>{const button=e.target.closest('[data-approve-tenant-profile]');if(!button)return;button.disabled=true;try{const data=await api(`/api/tenant-portal/submissions/${button.dataset.approveTenantProfile}/approve`,{method:'POST'});alertUser(`Approved tenant details for unit ${data.tenant.unit_number}.`);await refresh();await refreshTenantPortalSubmissions()}catch(error){alertUser(error.message,true)}finally{button.disabled=false}});
+  $('agreement-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.target,values=Object.fromEntries(new FormData(form));values.tenant_id=Number(values.tenant_id);values.rent_due_day=Number(values.rent_due_day);values.occupants=Array.from($('agreement-occupants').querySelectorAll('.occupant-row')).map(row=>Object.fromEntries(Array.from(row.querySelectorAll('[data-resident]')).map(input=>[input.dataset.resident,input.value.trim()])));for(const resident of values.occupants)for(const key of ['email','relationship_to_tenant'])if(!resident[key])delete resident[key];if(!values.landlord_email)delete values.landlord_email;const button=form.querySelector('button[type="submit"]');button.disabled=true;try{const result=await api('/api/agreements',{method:'POST',body:JSON.stringify(values)});$('agreement-links').innerHTML='';appendAgreementLink('tenant',result.signing_links.tenant,result.remote_signing_configured);appendAgreementLink('landlord',result.signing_links.landlord,result.remote_signing_configured);$('agreement-link-status').textContent+=' Agreement created. Copy and deliver each link to its signer.';alertUser(`Created agreement for ${result.agreement.tenant_name}.`);form.reset();$('agreement-occupants').innerHTML='';await refreshAgreements()}catch(err){alertUser(err.message,true)}finally{button.disabled=false}});
+  const units = value => new Intl.NumberFormat('en-IN',{maximumFractionDigits:3}).format(Number(value||0))+' kWh';
+  function renderKseb(bill){if(!bill){$('kseb-content').className='empty';$('kseb-content').textContent='No KSEB bill imported for this month. You can fetch it from the configured WSS account or import a downloaded bill PDF.';return}
+    $('kseb-content').className='table-wrap';$('kseb-content').innerHTML='<div class="stats" style="margin:0 0 16px"><div class="card stat"><div class="label">Imported</div><div class="value">'+units(bill.imported_total_kwh)+'</div></div><div class="card stat"><div class="label">Exported</div><div class="value">'+units(bill.exported_total_kwh)+'</div></div><div class="card stat"><div class="label">Solar generation</div><div class="value">'+units(bill.solar_generation_kwh)+'</div></div><div class="card stat"><div class="label">Bill payable</div><div class="value">'+money(bill.bill_amount)+'</div></div></div><table><thead><tr><th>Reading band</th><th>Imported</th><th>Exported</th><th>Solar generated</th></tr></thead><tbody><tr><td>Normal</td><td>'+units(bill.imported_normal_kwh)+'</td><td>'+units(bill.exported_normal_kwh)+'</td><td>'+units(bill.solar_normal_kwh)+'</td></tr><tr><td>Off peak</td><td>'+units(bill.imported_off_peak_kwh)+'</td><td>'+units(bill.exported_off_peak_kwh)+'</td><td>'+units(bill.solar_off_peak_kwh)+'</td></tr><tr><td>Peak</td><td>'+units(bill.imported_peak_kwh)+'</td><td>'+units(bill.exported_peak_kwh)+'</td><td>'+units(bill.solar_peak_kwh)+'</td></tr><tr><td><strong>Derived solar self-use</strong></td><td colspan="3">'+units(bill.solar_self_used_kwh)+'</td></tr><tr><td><strong>Implied site consumption</strong></td><td colspan="3">'+units(bill.site_consumption_kwh)+'</td></tr></tbody></table><div class="hint" style="margin-top:12px">Implied site consumption = solar generation + imported units − exported units. The amount shown is KSEB net payable from the bill; tariff and group adjustments are not recalculated.</div><div class="hint" style="margin-top:5px">Billing month '+esc(bill.billing_month)+' · Source '+esc(bill.source_label)+'</div>'}
+  function renderSolarUsage(services){
+    const root=$('solar-usage');
+    if(!services.length){root.className='empty';root.textContent='No per-consumer bills are available for this month.';return}
+    const total=field=>services.reduce((sum,service)=>sum+Number(service[field]||0),0);
+    const metrics=[['Grid imported',total('imported_total_kwh')],['Grid exported',total('exported_total_kwh')],['Solar generated',total('solar_generation_kwh')],['Solar self-use',total('solar_self_used_kwh')],['Site units consumed',total('site_consumption_kwh')]];
+    root.className='';
+    const metricCards=metrics.map(([label,value])=>`<div class="solar-total"><span>${label}</span><strong>${units(value)}</strong></div>`).join('');
+    const billTotal=`<div class="solar-total"><span>Combined bill payable</span><strong>${money(total('bill_amount'))}</strong></div>`;
+    const rows=services.map(service=>`<tr><td><strong>${esc(service.consumer_number)}</strong><br><span class="muted">${esc(service.billing_month)}</span></td><td>${units(service.imported_total_kwh)}</td><td>${units(service.exported_total_kwh)}</td><td>${units(service.solar_generation_kwh)}</td><td>${units(service.solar_self_used_kwh)}</td><td><strong>${units(service.site_consumption_kwh)}</strong></td><td>${money(service.bill_amount)}</td><td><details class="solar-detail"><summary>Reading bands</summary><table><thead><tr><th>Band</th><th>Imported</th><th>Exported</th><th>Solar</th></tr></thead><tbody><tr><td>Normal</td><td>${units(service.imported_normal_kwh)}</td><td>${units(service.exported_normal_kwh)}</td><td>${units(service.solar_normal_kwh)}</td></tr><tr><td>Off peak</td><td>${units(service.imported_off_peak_kwh)}</td><td>${units(service.exported_off_peak_kwh)}</td><td>${units(service.solar_off_peak_kwh)}</td></tr><tr><td>Peak</td><td>${units(service.imported_peak_kwh)}</td><td>${units(service.exported_peak_kwh)}</td><td>${units(service.solar_peak_kwh)}</td></tr></tbody></table></details></td></tr>`).join('');
+    root.innerHTML=`<div class="solar-totals">${metricCards}${billTotal}</div><div class="solar-table-wrap"><table class="solar-table"><thead><tr><th>Consumer number</th><th>Imported</th><th>Exported</th><th>Solar generated</th><th>Solar self-use</th><th>Site consumed</th><th>Bill payable</th><th>Readings</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  async function refresh(){try{const d=await api('/api/dashboard?month='+encodeURIComponent(selectedMonth()));$('tenant-count').textContent=d.summary.tenant_count;$('ledger-count').textContent=d.summary.ledger_count;$('total-due').textContent=money(d.summary.total_due);$('payment-count').textContent=d.summary.matched_payment_count;renderLedger(d.ledgers);renderTenants(d.tenants);renderKseb(d.kseb_bill);renderSolarUsage(d.kseb_bills||[]);renderAgreementTenantOptions(d.tenants);await Promise.all([refreshAgreements(),refreshTenantPortalSubmissions()])}catch(e){alertUser(e.message,true)}}
+  async function fetchKsebBill(){const button=$('kseb-fetch');button.disabled=true;try{const result=await api('/api/kseb/fetch',{method:'POST'});alertUser('Imported '+result.fetched_count+' KSEB bill(s).'+(result.failed_count?' '+result.failed_count+' service(s) failed.':''));await refresh()}catch(e){alertUser(e.message,true)}finally{button.disabled=false}}
+  $('kseb-upload').addEventListener('submit',async e=>{e.preventDefault();const file=$('kseb-pdf').files[0];if(!file)return;try{const bill=await api('/api/kseb/import?filename='+encodeURIComponent(file.name),{method:'POST',body:file,headers:{'Content-Type':'application/pdf'}});alertUser('Imported KSEB bill for '+bill.billing_month+'.');$('kseb-pdf').value='';await refresh()}catch(err){alertUser(err.message,true)}});
+  async function generateLedgers(){try{const d=await api('/api/ledgers/generate?month='+encodeURIComponent(selectedMonth()),{method:'POST'});alertUser(`Generated or loaded ${d.count} monthly ledger(s).`);await refresh()}catch(e){alertUser(e.message,true)}}
+  async function previewReminders(){try{const d=await api('/api/reminders/preview?month='+encodeURIComponent(selectedMonth()),{method:'POST'});$('reminders').innerHTML=d.reminders.length?d.reminders.map(r=>`<div class="activity-item"><strong>Tenant #${r.tenant_id}</strong><br>${esc(r.message)}</div>`).join(''):'<div class="empty">No pending reminders for this month.</div>'}catch(e){alertUser(e.message,true)}}
+  $('tenant-form').addEventListener('submit',async e=>{e.preventDefault();const values=Object.fromEntries(new FormData(e.target));for(const key of ['maintenance_fee','deposit_amount','opening_balance'])values[key]=values[key]||'0';if(!values.due_day)delete values.due_day;for(const key of ['email','upi_vpa','expected_sender_name','expected_remarks'])if(!values[key])delete values[key];try{const t=await api('/api/tenants',{method:'POST',body:JSON.stringify(values)});alertUser(`Saved ${t.name} in unit ${t.unit_number} and tenants.xlsx.`);e.target.reset();await refresh()}catch(err){alertUser(err.message,true)}});
+  $('payment-form').addEventListener('submit',async e=>{e.preventDefault();const values=Object.fromEntries(new FormData(e.target));values.timestamp=new Date().toISOString();values.payment_mode='UPI';for(const key of ['sender_vpa','sender_name'])if(!values[key])delete values[key];try{const r=await api('/api/payments',{method:'POST',body:JSON.stringify(values)});alertUser(`Payment ${r.status.toLowerCase()} · ${money(r.amount)}${r.tenant_id?` · tenant #${r.tenant_id}`:''}`);e.target.reset();await refresh()}catch(err){alertUser(err.message,true)}});
+  $('month').value=new Date().toISOString().slice(0,7);refresh();setInterval(()=>{if(!document.hidden)refresh()},15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+.env
+.venv/
+.playwright-browsers/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.db
+*.db-wal
+*.db-shm
+
+# Local tenant, billing, and solar workbooks can contain personal/account data.
+tenants.xlsx
+solar_consumption.xlsx
+monthly_excel_data/
